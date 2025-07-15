@@ -141,30 +141,11 @@ AVRPawn::AVRPawn()
 	SceneCaptureColorRight->SetupAttachment(RightEye);
 	SceneCaptureDepthRight->SetupAttachment(RightEye);
 
-	//Color Render Target
-	//L
-	RT_Color_L = NewObject<UTextureRenderTarget2D>(this, TEXT("RT_Color_L"));
-	RT_Color_L->RenderTargetFormat = RTF_RGBA8;
-	RT_Color_L->InitAutoFormat(1280, 1440);
-	RT_Color_L->UpdateResource();
+	RT_Color_L = nullptr;
+	RT_Color_R = nullptr;
+	RT_Depth_L = nullptr;
+	RT_Depth_R = nullptr;
 
-	//R
-	RT_Color_R = NewObject<UTextureRenderTarget2D>(this, TEXT("RT_Color_R"));
-	RT_Color_R->RenderTargetFormat = RTF_RGBA8;
-	RT_Color_R->InitAutoFormat(1280, 1440);
-	RT_Color_R->UpdateResource();
-	//Depth Render Target
-	//L
-	RT_Depth_L = NewObject<UTextureRenderTarget2D>(this, TEXT("RT_Depth_L"));
-	RT_Depth_L->RenderTargetFormat = RTF_R16f;
-	RT_Depth_L->InitAutoFormat(1280, 1440);
-	RT_Depth_L->UpdateResource();
-
-	//R
-	RT_Depth_R = NewObject<UTextureRenderTarget2D>(this, TEXT("RT_Depth_R"));
-	RT_Depth_R->RenderTargetFormat = RTF_R16f;
-	RT_Depth_R->InitAutoFormat(1280, 1440);
-	RT_Depth_R->UpdateResource();
 
 	// Assign them to SceneCapture components
 	SceneCaptureColorLeft->TextureTarget = RT_Color_L;
@@ -199,6 +180,48 @@ void AVRPawn::BeginPlay()
 		GLog->Log("Unknown tracking origin. Defaulting to Seated Mode.");
 		SetVRMode(true);
 	}
+
+	//Dynamic init of RenderTargets
+	//Color Left
+	if (!RT_Color_L)
+	{
+		RT_Color_L = NewObject<UTextureRenderTarget2D>(this);
+		RT_Color_L->RenderTargetFormat = RTF_RGBA8;
+		RT_Color_L->InitAutoFormat(1280, 1440);
+		RT_Color_L->UpdateResource();
+		SceneCaptureColorLeft->TextureTarget = RT_Color_L;
+	}
+
+	//Color Right
+	if (!RT_Color_R)
+	{
+		RT_Color_R = NewObject<UTextureRenderTarget2D>(this);
+		RT_Color_R->RenderTargetFormat = RTF_RGBA8;
+		RT_Color_R->InitAutoFormat(1280, 1440);
+		RT_Color_R->UpdateResource();
+		SceneCaptureColorRight->TextureTarget = RT_Color_R;
+	}
+
+	//Depth Left
+	if (!RT_Depth_L)
+	{
+		RT_Depth_L = NewObject<UTextureRenderTarget2D>(this);
+		RT_Depth_L->RenderTargetFormat = RTF_R16f;
+		RT_Depth_L->InitAutoFormat(1280, 1440);
+		RT_Depth_L->UpdateResource();
+		SceneCaptureDepthLeft->TextureTarget = RT_Depth_L;
+	}
+
+	//Depth Right
+	if (!RT_Depth_R)
+	{
+		RT_Depth_R = NewObject<UTextureRenderTarget2D>(this);
+		RT_Depth_R->RenderTargetFormat = RTF_R16f;
+		RT_Depth_R->InitAutoFormat(1280, 1440);
+		RT_Depth_R->UpdateResource();
+		SceneCaptureDepthRight->TextureTarget = RT_Depth_R;
+	}
+
 
 	if (DepthNormMaterial)
 	{
