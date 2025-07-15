@@ -107,7 +107,7 @@ AVRPawn::AVRPawn()
 	RightCone->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 
 	//recasting
-	navmesh = dynamic_cast<ARecastNavMesh*>(UGameplayStatics::GetActorOfClass(GetWorld(), ARecastNavMesh::StaticClass()));
+	//navmesh = dynamic_cast<ARecastNavMesh*>(UGameplayStatics::GetActorOfClass(GetWorld(), ARecastNavMesh::StaticClass()));
 
 	//##################################################### C A P T U R I N G #####################################################
 	// Create Color Scene Capture
@@ -143,36 +143,35 @@ AVRPawn::AVRPawn()
 
 	//Color Render Target
 	//L
-	/*static ConstructorHelpers::FObjectFinder<UTextureRenderTarget2D> ColorAssetL(TEXT("TextureRenderTarget2D'/Game/DataAssets/RTs/RT_ColorL.RT_ColorL'"));
-	RT_Color_L = DuplicateObject<UTextureRenderTarget2D>(ColorAssetL.Object, this);
-	//R
-	static ConstructorHelpers::FObjectFinder<UTextureRenderTarget2D> ColorAssetR(TEXT("TextureRenderTarget2D'/Game/DataAssets/RTs/RT_ColorR.RT_ColorR'"));
-	RT_Color_R = DuplicateObject<UTextureRenderTarget2D>(ColorAssetR.Object, this);
+	RT_Color_L = NewObject<UTextureRenderTarget2D>(this, TEXT("RT_Color_L"));
+	RT_Color_L->RenderTargetFormat = RTF_RGBA8;
+	RT_Color_L->InitAutoFormat(1280, 1440);
+	RT_Color_L->UpdateResource();
 
+	//R
+	RT_Color_R = NewObject<UTextureRenderTarget2D>(this, TEXT("RT_Color_R"));
+	RT_Color_R->RenderTargetFormat = RTF_RGBA8;
+	RT_Color_R->InitAutoFormat(1280, 1440);
+	RT_Color_R->UpdateResource();
 	//Depth Render Target
 	//L
-	static ConstructorHelpers::FObjectFinder<UTextureRenderTarget2D> DepthAssetL(TEXT("TextureRenderTarget2D'/Game/DataAssets/RTs/RT_DepthL.RT_DepthL'"));
-	RT_Depth_L = DuplicateObject<UTextureRenderTarget2D>(DepthAssetL.Object, this);
+	RT_Depth_L = NewObject<UTextureRenderTarget2D>(this, TEXT("RT_Depth_L"));
+	RT_Depth_L->RenderTargetFormat = RTF_R16f;
+	RT_Depth_L->InitAutoFormat(1280, 1440);
+	RT_Depth_L->UpdateResource();
 
 	//R
-	static ConstructorHelpers::FObjectFinder<UTextureRenderTarget2D> DepthAssetR(TEXT("TextureRenderTarget2D'/Game/DataAssets/RTs/RT_DepthR.RT_DepthR'"));
-	RT_Depth_R = DuplicateObject<UTextureRenderTarget2D>(DepthAssetR.Object, this);
+	RT_Depth_R = NewObject<UTextureRenderTarget2D>(this, TEXT("RT_Depth_R"));
+	RT_Depth_R->RenderTargetFormat = RTF_R16f;
+	RT_Depth_R->InitAutoFormat(1280, 1440);
+	RT_Depth_R->UpdateResource();
 
-	// Assign Color Capture
-	//L
+	// Assign them to SceneCapture components
 	SceneCaptureColorLeft->TextureTarget = RT_Color_L;
-	SceneCaptureColorLeft->CaptureSource = ESceneCaptureSource::SCS_FinalColorHDR;
-	//R
 	SceneCaptureColorRight->TextureTarget = RT_Color_R;
-	SceneCaptureColorRight->CaptureSource = ESceneCaptureSource::SCS_FinalColorHDR;
-
-	// Assign Depth Capture
-	//L
 	SceneCaptureDepthLeft->TextureTarget = RT_Depth_L;
-	SceneCaptureDepthLeft->CaptureSource = ESceneCaptureSource::SCS_SceneDepth;
-	//R
 	SceneCaptureDepthRight->TextureTarget = RT_Depth_R;
-	SceneCaptureDepthRight->CaptureSource = ESceneCaptureSource::SCS_SceneDepth;*/
+
 
 }
 
