@@ -93,6 +93,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Capture")
 		UMaterialInterface* DepthNormMaterial;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = __hide)
+		UStaticMeshComponent* SceneDepthCS;
+
 	//Render Targets with info for the frames
 	UPROPERTY(EditAnywhere, Category = "Capture")
 		UTextureRenderTarget2D* RT_Color_L;

@@ -23,6 +23,8 @@ AVRPawn::AVRPawn()
 	PlayerBody = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Body"));
 	//outputText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("outputText"));
 
+	//Scene Depth Filter Plane
+
 	//Left Hand VR
 	LeftController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("LeftContoller"));
 	LeftCone = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LeftCone"));
@@ -65,6 +67,7 @@ AVRPawn::AVRPawn()
 	//Transformations in Unreal Location, Rotation, Scale
 	RightEye->SetRelativeLocation(FVector(50, 32, SeatedHeightOffset));
 	LeftEye->SetRelativeLocation(FVector(50, -32, SeatedHeightOffset));
+
 	PlayerBody->SetRelativeLocation(FVector(0, 0, -20));
 	PlayerBody->SetRelativeScale3D(FVector(2, 2, SeatedHeightOffset / 100));
 
@@ -131,9 +134,13 @@ AVRPawn::AVRPawn()
 	//L
 	SceneCaptureDepthLeft = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCaptureDepthLeft"));
 	SceneCaptureDepthLeft->SetRelativeLocation(FVector(0, -StereoOffset / 2, 0));
+	SceneCaptureDepthLeft->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
+	
+
 	//R
 	SceneCaptureDepthRight = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCaptureDepthRight"));
 	SceneCaptureDepthRight->SetRelativeLocation(FVector(0, StereoOffset / 2, 0));
+	SceneCaptureDepthRight->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
 
 	//Hierarchy
 	SceneCaptureColorLeft->SetupAttachment(LeftEye);
@@ -206,7 +213,7 @@ void AVRPawn::BeginPlay()
 	if (!RT_Depth_L)
 	{
 		RT_Depth_L = NewObject<UTextureRenderTarget2D>(this);
-		RT_Depth_L->RenderTargetFormat = RTF_R16f;
+		RT_Depth_L->RenderTargetFormat = RTF_RGBA8;
 		RT_Depth_L->InitAutoFormat(1280, 1440);
 		RT_Depth_L->UpdateResource();
 		SceneCaptureDepthLeft->TextureTarget = RT_Depth_L;
@@ -216,7 +223,7 @@ void AVRPawn::BeginPlay()
 	if (!RT_Depth_R)
 	{
 		RT_Depth_R = NewObject<UTextureRenderTarget2D>(this);
-		RT_Depth_R->RenderTargetFormat = RTF_R16f;
+		RT_Depth_R->RenderTargetFormat = RTF_RGBA8;
 		RT_Depth_R->InitAutoFormat(1280, 1440);
 		RT_Depth_R->UpdateResource();
 		SceneCaptureDepthRight->TextureTarget = RT_Depth_R;
