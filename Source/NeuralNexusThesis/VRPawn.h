@@ -92,6 +92,8 @@ public:
 	//Normalization of SceneDepth
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Capture")
 		UMaterialInterface* DepthNormMaterial;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = __hide)
+		UStaticMeshComponent* SceneDepthFilterPlane;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = __hide)
 		UStaticMeshComponent* SceneDepthCS;
@@ -108,6 +110,14 @@ public:
 		UTextureRenderTarget2D* RT_Depth_R;
 
 	float StereoOffset;
+	TArray<FVector> Waypoints;
+	int32 CurrentWaypointIndex = 0;
+	//for the fixed path
+	bool bIsFollowingPath = false;
+
+	float MoveSpeed;
+	float TimeSinceLastCaptured;
+	float CaptureIntvl;
 
 	void SaveRenderTarget(UTextureRenderTarget2D* RT, FString FileName);
 
@@ -120,6 +130,8 @@ public:
 	void MoveRight(float AxisValue);
 
 	void Turn(float AxisValue);
+	
+	void StartPathCapture();
 
 	UFUNCTION(BlueprintCallable)
 		void TPThere();

@@ -16,6 +16,14 @@ AVRPawn::AVRPawn()
 	//########################################## V R   C O N T R O L L E R ################################################
 	StereoOffset = 6.5f;
 
+	//for fixed path : init
+	Waypoints;
+	CurrentWaypointIndex = 0;
+	bIsFollowingPath = false;
+	MoveSpeed = 200.0f;
+	TimeSinceLastCaptured = 0.0f;
+	CaptureIntvl = 0.2f;
+
 	//scene & camera
 	VRTrackingCenter = CreateDefaultSubobject<USceneComponent>(TEXT("VRTrackingCenter"));
 	RightEye = CreateDefaultSubobject<UCameraComponent>(TEXT("RightEye"));
@@ -270,6 +278,36 @@ void AVRPawn::Tick(float DeltaTime)
 		SceneCaptureDepthRight->PostProcessSettings.AddBlendable(DepthNormMaterial, 1.0f);
 	}
 
+	if (bIsFollowingPath && Waypoints.IsValidIndex(CurrentWaypointIndex))
+	{
+		FVector Target = Waypoints[CurrentWaypointIndex];
+		FVector Current = GetActorLocation();
+
+		FVector MoveDir = (Target - Current).GetSafeNormal();
+		float MoveStep = MoveSpeed * DeltaTime;
+		FVector NewLocation = Current + MoveDir * MoveStep;
+
+		SetActorLocation(NewLocation);
+
+		// handle timed captures
+		TimeSinceLastCaptured += DeltaTime;
+		if (TimeSinceLastCaptured >= CaptureIntvl)
+		{
+			CaptureFrame();
+			TimeSinceLastCaptured = 0.f;
+		}
+
+		// Check if we reached the waypoint
+		if (FVector::Dist(NewLocation, Target) < 10.0f)
+		{
+			CurrentWaypointIndex++;
+			if (!Waypoints.IsValidIndex(CurrentWaypointIndex))
+			{
+				bIsFollowingPath = false;
+				UE_LOG(LogTemp, Warning, TEXT("Finished path capture"));
+			}
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -282,6 +320,7 @@ void AVRPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis("Turn", this, &AVRPawn::Turn);
 
 	PlayerInputComponent->BindAction("Capture", EInputEvent::IE_Pressed, this, &AVRPawn::CaptureFrame);
+	PlayerInputComponent->BindAction("StartPathCapture", IE_Pressed, this, &AVRPawn::StartPathCapture);
 
 }
 
@@ -354,20 +393,20 @@ void AVRPawn::CaptureFrame()
 	//FORCE RENDER (FIX FOR DEPTH MAPS?)
 	SceneCaptureColorLeft->CaptureScene();
 	SceneCaptureColorRight->CaptureScene();
-	SceneCaptureDepthLeft->CaptureScene();
-	SceneCaptureDepthRight->CaptureScene();
+	//SceneCaptureDepthLeft->CaptureScene();
+	//SceneCaptureDepthRight->CaptureScene();
 
 	int FrameNumber = GFrameNumber;
 
 	FString FileNameColorL = FString::Printf(TEXT("Color/Left/Scene_Color_L%04d.exr"), FrameNumber);
 	FString FileNameColorR = FString::Printf(TEXT("Color/Right/Scene_Color_R%04d.exr"), FrameNumber);
-	FString FileNameDepthL = FString::Printf(TEXT("Depth/Left/Scene_Depth_L%04d.exr"), FrameNumber);
-	FString FileNameDepthR = FString::Printf(TEXT("Depth/Right/Scene_Depth_R%04d.exr"), FrameNumber);
+	//FString FileNameDepthL = FString::Printf(TEXT("Depth/Left/Scene_Depth_L%04d.exr"), FrameNumber);
+	//FString FileNameDepthR = FString::Printf(TEXT("Depth/Right/Scene_Depth_R%04d.exr"), FrameNumber);
 
 	SaveRenderTarget(RT_Color_L, FileNameColorL);
 	SaveRenderTarget(RT_Color_R, FileNameColorR);
-	SaveRenderTarget(RT_Depth_L, FileNameDepthL);
-	SaveRenderTarget(RT_Depth_R, FileNameDepthR);
+	//SaveRenderTarget(RT_Depth_L, FileNameDepthL);
+	//SaveRenderTarget(RT_Depth_R, FileNameDepthR);
 
 	UE_LOG(LogTemp, Warning, TEXT("Captured frame %d!"), FrameNumber);
 }
@@ -379,7 +418,7 @@ void AVRPawn::SaveRenderTarget(UTextureRenderTarget2D* RT, FString SubPathAndFil
 		return;
 	}
 
-	FString Directory = FPaths::ProjectSavedDir() + TEXT("Screenshots/Scene0") + FPaths::GetPath(SubPathAndFileName) + TEXT("/");
+	FString Directory = FPaths::ProjectSavedDir() + TEXT("Screenshots/Scene4") + FPaths::GetPath(SubPathAndFileName) + TEXT("/");
 
 	if (!IFileManager::Get().DirectoryExists(*Directory))
 	{
@@ -389,4 +428,21 @@ void AVRPawn::SaveRenderTarget(UTextureRenderTarget2D* RT, FString SubPathAndFil
 	FString FileName = FPaths::GetCleanFilename(SubPathAndFileName);
 	UE_LOG(LogTemp, Warning, TEXT("Saving screenshot to: %s%s"), *Directory, *FileName);
 	UKismetRenderingLibrary::ExportRenderTarget(this, RT, Directory, FileName);
+}
+
+void AVRPawn::StartPathCapture()
+{
+	FVector Start = GetActorLocation();
+	Waypoints = {
+		Start + FVector(300, 0, 0),
+		Start + FVector(300, 300, 0),
+		Start + FVector(0, 300, 0),
+		Start
+	};
+
+	CurrentWaypointIndex = 0.0f;
+	bIsFollowingPath = true;
+	TimeSinceLastCaptured = 0.0f;
+
+	UE_LOG(LogTemp, Warning, TEXT("Started path capture"));
 }
