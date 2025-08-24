@@ -131,6 +131,12 @@ AVRPawn::AVRPawn()
 		DepthNormMaterial = MatFinder.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> NormFinder(TEXT("Material'/Game/M_Normals.M_Normals'"));
+	if (NormFinder.Succeeded())
+	{
+		NormalMaterial = NormFinder.Object;
+	}
+
 	//L
 	SceneCaptureColorLeft = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCaptureLeft"));
 	SceneCaptureColorLeft->SetRelativeLocation(FVector(0, -StereoOffset / 2, 0));
@@ -150,16 +156,26 @@ AVRPawn::AVRPawn()
 	SceneCaptureDepthRight->SetRelativeLocation(FVector(0, StereoOffset / 2, 0));
 	SceneCaptureDepthRight->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
 
+	SceneCaptureNormalLeft = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCaptureNormalLeft"));
+	SceneCaptureNormalLeft->SetRelativeLocation(FVector(0, -StereoOffset / 2, 0));
+	//R
+	SceneCaptureNormalRight = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCaptureNormalRight"));
+	SceneCaptureNormalRight->SetRelativeLocation(FVector(0, StereoOffset / 2, 0));
+
 	//Hierarchy
 	SceneCaptureColorLeft->SetupAttachment(LeftEye);
 	SceneCaptureDepthLeft->SetupAttachment(LeftEye);
 	SceneCaptureColorRight->SetupAttachment(RightEye);
 	SceneCaptureDepthRight->SetupAttachment(RightEye);
+	SceneCaptureNormalRight->SetupAttachment(RightEye);
+	SceneCaptureNormalLeft->SetupAttachment(LeftEye);
 
 	RT_Color_L = nullptr;
 	RT_Color_R = nullptr;
 	RT_Depth_L = nullptr;
 	RT_Depth_R = nullptr;
+	RT_Normal_L = nullptr;
+	RT_Normal_R = nullptr;
 
 
 	// Assign them to SceneCapture components
@@ -237,6 +253,26 @@ void AVRPawn::BeginPlay()
 		SceneCaptureDepthRight->TextureTarget = RT_Depth_R;
 	}
 
+	//Normal Left
+	if (!RT_Normal_L)
+	{
+		RT_Normal_L = NewObject<UTextureRenderTarget2D>(this);
+		RT_Normal_L->RenderTargetFormat = RTF_RGBA8;
+		RT_Normal_L->InitAutoFormat(1280, 1440);
+		RT_Normal_L->UpdateResource();
+		SceneCaptureNormalLeft->TextureTarget = RT_Normal_L;
+	}
+
+	//Normal Right
+	if (!RT_Normal_R)
+	{
+		RT_Normal_R = NewObject<UTextureRenderTarget2D>(this);
+		RT_Normal_R->RenderTargetFormat = RTF_RGBA8;
+		RT_Normal_R->InitAutoFormat(1280, 1440);
+		RT_Normal_R->UpdateResource();
+		SceneCaptureNormalRight->TextureTarget = RT_Normal_R;
+	}
+
 
 	if (DepthNormMaterial)
 	{
@@ -245,6 +281,14 @@ void AVRPawn::BeginPlay()
 
 		//right eye normalization
 		SceneCaptureDepthRight->PostProcessSettings.AddBlendable(DepthNormMaterial, 1.0f);
+	}
+	if (NormalMaterial)
+	{
+		//left eye normalization
+		SceneCaptureNormalLeft->PostProcessSettings.AddBlendable(NormalMaterial, 1.0f);
+
+		//right eye normalization
+		SceneCaptureNormalRight->PostProcessSettings.AddBlendable(NormalMaterial, 1.0f);
 	}
 }
 
@@ -277,6 +321,16 @@ void AVRPawn::Tick(float DeltaTime)
 		//right eye normalization
 		SceneCaptureDepthRight->PostProcessSettings.AddBlendable(DepthNormMaterial, 1.0f);
 	}
+
+	if (NormalMaterial)
+	{
+		//left eye normalization
+		SceneCaptureNormalLeft->PostProcessSettings.AddBlendable(NormalMaterial, 1.0f);
+
+		//right eye normalization
+		SceneCaptureNormalRight->PostProcessSettings.AddBlendable(NormalMaterial, 1.0f);
+	}
+	
 
 	if (bIsFollowingPath && Waypoints.IsValidIndex(CurrentWaypointIndex))
 	{
@@ -393,20 +447,27 @@ void AVRPawn::CaptureFrame()
 	//FORCE RENDER (FIX FOR DEPTH MAPS?)
 	SceneCaptureColorLeft->CaptureScene();
 	SceneCaptureColorRight->CaptureScene();
-	//SceneCaptureDepthLeft->CaptureScene();
-	//SceneCaptureDepthRight->CaptureScene();
+	SceneCaptureDepthLeft->CaptureScene();
+	SceneCaptureDepthRight->CaptureScene();
+	SceneCaptureNormalLeft->CaptureScene();
+	SceneCaptureNormalRight->CaptureScene();
 
 	int FrameNumber = GFrameNumber;
 
-	FString FileNameColorL = FString::Printf(TEXT("Color/Left/Scene_Color_L%04d.exr"), FrameNumber);
-	FString FileNameColorR = FString::Printf(TEXT("Color/Right/Scene_Color_R%04d.exr"), FrameNumber);
-	//FString FileNameDepthL = FString::Printf(TEXT("Depth/Left/Scene_Depth_L%04d.exr"), FrameNumber);
-	//FString FileNameDepthR = FString::Printf(TEXT("Depth/Right/Scene_Depth_R%04d.exr"), FrameNumber);
+	FString FileNameColorL = FString::Printf(TEXT("Color_L/Scene_Color_L%04d.exr"), FrameNumber);
+	FString FileNameColorR = FString::Printf(TEXT("Color_R/Scene_Color_R%04d.exr"), FrameNumber);
+	FString FileNameDepthL = FString::Printf(TEXT("Depth_L/Scene_Depth_L%04d.exr"), FrameNumber);
+	FString FileNameDepthR = FString::Printf(TEXT("Depth_R/Scene_Depth_R%04d.exr"), FrameNumber);
+	FString FileNameNormalL = FString::Printf(TEXT("Normal_L/Scene_Normal_L%04d.exr"), FrameNumber);
+	FString FileNameNormalR = FString::Printf(TEXT("Normal_R/Scene_Normal_R%04d.exr"), FrameNumber);
+
 
 	SaveRenderTarget(RT_Color_L, FileNameColorL);
 	SaveRenderTarget(RT_Color_R, FileNameColorR);
-	//SaveRenderTarget(RT_Depth_L, FileNameDepthL);
-	//SaveRenderTarget(RT_Depth_R, FileNameDepthR);
+	SaveRenderTarget(RT_Depth_L, FileNameDepthL);
+	SaveRenderTarget(RT_Depth_R, FileNameDepthR);
+	SaveRenderTarget(RT_Normal_L, FileNameNormalL);
+	SaveRenderTarget(RT_Normal_R, FileNameNormalR);
 
 	UE_LOG(LogTemp, Warning, TEXT("Captured frame %d!"), FrameNumber);
 }
@@ -418,7 +479,7 @@ void AVRPawn::SaveRenderTarget(UTextureRenderTarget2D* RT, FString SubPathAndFil
 		return;
 	}
 
-	FString Directory = FPaths::ProjectSavedDir() + TEXT("Screenshots/Scene4") + FPaths::GetPath(SubPathAndFileName) + TEXT("/");
+	FString Directory = FPaths::ProjectSavedDir() + TEXT("Screenshots/") + FPaths::GetPath(SubPathAndFileName) + TEXT("/");
 
 	if (!IFileManager::Get().DirectoryExists(*Directory))
 	{

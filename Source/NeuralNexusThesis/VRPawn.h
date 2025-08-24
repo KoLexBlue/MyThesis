@@ -84,14 +84,19 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Capture")
 		USceneCaptureComponent2D* SceneCaptureColorRight;
 	UPROPERTY(EditAnywhere, Category = "Capture")
-
 		USceneCaptureComponent2D* SceneCaptureDepthLeft;
 	UPROPERTY(EditAnywhere, Category = "Capture")
 		USceneCaptureComponent2D* SceneCaptureDepthRight;
+	UPROPERTY(EditAnywhere, Category = "Capture")
+		USceneCaptureComponent2D* SceneCaptureNormalLeft;
+	UPROPERTY(EditAnywhere, Category = "Capture")
+		USceneCaptureComponent2D* SceneCaptureNormalRight;
 
 	//Normalization of SceneDepth
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Capture")
 		UMaterialInterface* DepthNormMaterial;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Capture")
+		UMaterialInterface* NormalMaterial;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = __hide)
 		UStaticMeshComponent* SceneDepthFilterPlane;
 
@@ -108,6 +113,11 @@ public:
 		UTextureRenderTarget2D* RT_Depth_L;
 	UPROPERTY(EditAnywhere, Category = "Capture")
 		UTextureRenderTarget2D* RT_Depth_R;
+
+	UPROPERTY(EditAnywhere, Category = "Capture")
+		UTextureRenderTarget2D* RT_Normal_L;
+	UPROPERTY(EditAnywhere, Category = "Capture")
+		UTextureRenderTarget2D* RT_Normal_R;
 
 	float StereoOffset;
 	TArray<FVector> Waypoints;
